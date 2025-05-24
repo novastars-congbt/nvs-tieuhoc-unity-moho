@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Unity WebGL Player | {{{ PRODUCT_NAME }}}</title>
+    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <link rel="stylesheet" href="TemplateData/style.css">
+    <style>
+        .custom-alert {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+            width: 30vw;
+            height: 40vh;
+            text-align: center;
+            font-size: 32px;
+        }
+
+        .custom-alert p {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .custom-alert-button-container {
+            text-align: center;
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+        }
+
+        .confirm-dialog {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 1001;
+            width: 300px;
+            text-align: center;
+        }
+
+        .confirm-dialog p {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .confirm-dialog button {
+            margin: 0 10px;
+            padding: 5px 20px;
+            font-size: 14px;
+        }
+
+        /* Unity Loading Bar */
+        #unity-loading-bar {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        #unity-logo {
+            transform: scale(0.8);
+            transform-origin: center;
+        }
+
+        #unity-progress-bar-empty {
+            transform: scale(0.8);
+            transform-origin: center;
+            margin-top: 5px;
+        }
+
+        #unity-progress-bar-full {
+            transition: width 0.5s ease;
+            transform: scale(0.8);
+            transform-origin: left;
+        }
+
+        /* Footer Layout */
+        #unity-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 10px;
+            background-color: #f0f0f0;
+            box-sizing: border-box;
+        }
+
+        /* Left Section */
+        #left-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        #game-version {
+            font-size: 12px;
+            white-space: nowrap;
+            margin-bottom: 5px;
+        }
+
+        /* Modified Button Container */
+        .button-container {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+
+        /* Expandable Button Styles */
+        .expandable-button {
+            position: relative;
+            width: 38px;
+            height: 38px;
+            overflow: visible; /* Keep visible for the NEW badge */
+            transition: width 0.3s ease;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 0;
+            background-color: #4CAF50;
+        }
+
+        .expandable-button .text-container {
+            width: 0;
+            transition: width 0.3s ease;
+        }
+        
+        .expandable-button:hover {
+            width: 180px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* Icon container */
+        .expandable-button .icon {
+            min-width: 38px;
+            height: 38px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Update state icon */
+        .expandable-button.update .icon {
+            position: relative;
+            top: -2px;
+        }
+
+        /* Reload state icon */
+        .expandable-button.reload .icon {
+            font-size: 24px;
+        }
+
+        /* Special styling for update state */
+        .expandable-button.update .icon {
+            transform: translateY(2px);  /* Slight adjustment to center the arrow better */
+        }
+
+        /* Text Container */
+        .expandable-button .text {
+            color: #ffffff;
+            white-space: nowrap;
+            max-width: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-width 0.3s ease, opacity 0.3s ease, padding-right 0.3s ease;
+            padding-right: 0;
+            font-size: 15px;  /* Increased text size */
+            font-weight: 500;  /* Added for better visibility */
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);  /* Added for better contrast */
+        }
+
+        /* Hover States */
+        .expandable-button:hover {
+            width: 180px;
+        }
+
+        .expandable-button:hover .text {
+            max-width: 140px;
+            opacity: 1;
+            padding-right: 12px;
+        }
+
+        .expandable-button.delete {
+            background-color: #f44336;
+        }
+
+        .expandable-button.update {
+            background-color: #2196F3;
+        }
+
+        .expandable-button:hover.delete {
+            background-color: #da190b;
+        }
+
+        .expandable-button:hover.update {
+            background-color: #0b7dda;
+        }
+
+        /* Update Badge */
+        .update-badge {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            background-color: #ff4444;
+            color: white;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            display: none;
+            z-index: 2;
+            line-height: 14px;
+            white-space: nowrap;
+            pointer-events: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* Right Section */
+        #right-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .fullscreen-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            flex-direction: row-reverse;
+        }
+
+        #unity-fullscreen-button {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            background-color: #4a4a4a;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+
+        #unity-build-title {
+            font-size: 12px;
+            text-align: right;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            margin: 0;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 20px;
+            background-color: #4CAF50;
+            border-radius: 5px;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .progress-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
+            color: white;
+            line-height: 20px;
+            pointer-events: none;
+        }
+
+        /* Custom button general styles */
+        .custom-button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+
+        .custom-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div id="unity-container" class="unity-desktop">
+        <canvas id="unity-canvas" width={{{ WIDTH }}} height={{{ HEIGHT }}}></canvas>
+        <div id="unity-loading-bar">
+            <div id="unity-logo"></div>
+            <div id="unity-progress-bar-empty">
+                <div id="unity-progress-bar-full"></div>
+            </div>
+        </div>
+        <div id="unity-warning"></div>
+        <div id="unity-footer">
+            <div id="left-section">
+                <div id="version-line">
+                    <span id="game-version">Đang cập nhật phiên bản bài học...</span>
+                </div>
+                <div class="button-container">
+                    <button id="update-reload-btn" class="expandable-button">
+                        <span class="update-badge">New</span>
+                        <span class="icon">⟳</span>
+                        <span class="text">Tải lại bài học</span>
+                    </button>
+                    <button id="clear-cache-btn" class="expandable-button delete">
+                        <span class="icon">🗑️</span>
+                        <span class="text">Xóa bài học</span>
+                    </button>
+                </div>
+            </div>
+            <div id="right-section">
+                <div class="fullscreen-row">
+                    <div id="unity-fullscreen-button"></div>
+                    <span id="unity-build-title">Nút phóng to phần mềm (Bấm ESC để thu nhỏ)</span>
+                </div>
+                <div id="update-progress-container" class="progress-container">
+                    <div id="update-progress-bar" class="progress-bar">
+                        <span id="update-progress-text" class="progress-text"></span>
+                    </div>
+                </div>
+            </div>
+        </div>        
+    </div>
+    <div id="customAlert" class="custom-alert">
+        <p id="alertMessage"></p>
+        <div class="custom-alert-button-container">
+            <button onclick="closeCustomAlert()" class="custom-button">OK</button>
+        </div>
+    </div>
+    <div id="confirmDialog" class="confirm-dialog">
+        <p id="confirmMessage"></p>
+        <button id="confirmYes" class="custom-button">Có</button>
+        <button id="confirmNo" class="custom-button">Không</button>
+    </div>
+    <script>
+        function getWebGLPath() {
+            const path = window.location.pathname;
+            const match = path.match(/\/webgl\/[^/]+\//);
+            return match ? match[0] : '/';
+        }
+
+        // Get the dynamic webgl path
+        const webglPath = getWebGLPath();
+
+        // Update buildUrl to use dynamic path
+        const buildUrl = `${webglPath}Build`;
+        const loaderUrl = buildUrl + "/{{{ LOADER_FILENAME }}}";
+        const config = {
+            dataUrl: buildUrl + "/{{{ DATA_FILENAME }}}",
+            frameworkUrl: buildUrl + "/{{{ FRAMEWORK_FILENAME }}}",
+            codeUrl: buildUrl + "/{{{ CODE_FILENAME }}}",
+        #if MEMORY_FILENAME
+            memoryUrl: buildUrl + "/{{{ MEMORY_FILENAME }}}",
+        #endif
+        #if SYMBOLS_FILENAME
+            symbolsUrl: buildUrl + "/{{{ SYMBOLS_FILENAME }}}",
+        #endif
+            streamingAssetsUrl: "StreamingAssets",
+            companyName: "{{{ COMPANY_NAME }}}",
+            productName: "{{{ PRODUCT_NAME }}}",
+            productVersion: "{{{ PRODUCT_VERSION }}}",
+        };
+
+        var container = document.querySelector("#unity-container");
+        var canvas = document.querySelector("#unity-canvas");
+        var loadingBar = document.querySelector("#unity-loading-bar");
+        var progressBarFull = document.querySelector("#unity-progress-bar-full");
+        var fullscreenButton = document.querySelector("#unity-fullscreen-button");
+        var warningBanner = document.querySelector("#unity-warning");
+
+        // Version tracking variables
+        let currentVersion = null;
+        let serverVersion = null;
+        const updateReloadBtn = document.getElementById('update-reload-btn');
+        const updateBadge = document.querySelector('.update-badge');
+
+        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+            container.className = "unity-mobile";
+            config.devicePixelRatio = 1;
+            unityShowBanner('WebGL builds are not supported on mobile devices.');
+        } else {
+            canvas.style.width = "{{{ WIDTH }}}px";
+            canvas.style.height = "{{{ HEIGHT }}}px";
+        }
+
+        #if BACKGROUND_FILENAME
+            canvas.style.background = "url('" + buildUrl + "/{{{ BACKGROUND_FILENAME.replace(/'/g, '%27') }}}') center / cover";
+        #endif
+            loadingBar.style.display = "block";
+
+        // Unity initialization
+        var script = document.createElement("script");
+        script.src = loaderUrl;
+        script.onload = () => {
+            createUnityInstance(canvas, config, (progress) => {
+                progressBarFull.style.width = 100 * progress + "%";
+            }).then((unityInstance) => {
+                loadingBar.style.display = "none";
+                fullscreenButton.onclick = () => {
+                    unityInstance.SetFullscreen(1);
+                };
+            }).catch((message) => {
+                alert(message);
+            });
+        };
+        document.body.appendChild(script);
+
+        function unityShowBanner(msg, type) {
+            function updateBannerVisibility() {
+                warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+            }
+            var div = document.createElement('div');
+            div.innerHTML = msg;
+            warningBanner.appendChild(div);
+            if (type == 'error') div.style = 'background: red; padding: 10px;';
+            else {
+                if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
+                setTimeout(function() {
+                    warningBanner.removeChild(div);
+                    updateBannerVisibility();
+                }, 5000);
+            }
+            updateBannerVisibility();
+        }
+
+        // Alert and Confirm Dialog Functions
+        function showCustomAlert(message, onClose) {
+            document.getElementById('alertMessage').textContent = message;
+            const alertElement = document.getElementById('customAlert');
+            alertElement.style.display = 'block';
+
+            const button = alertElement.querySelector('button');
+            button.onclick = () => {
+                alertElement.style.display = 'none';
+                if (onClose) onClose();
+            };
+        }
+
+        function closeCustomAlert() {
+            document.getElementById('customAlert').style.display = 'none';
+        }
+
+        function showCustomConfirm(message, onConfirm) {
+            document.getElementById('confirmMessage').textContent = message;
+            const confirmDialog = document.getElementById('confirmDialog');
+            confirmDialog.style.display = 'block';
+
+            const confirmYesBtn = document.getElementById('confirmYes');
+            const confirmNoBtn = document.getElementById('confirmNo');
+
+            confirmYesBtn.onclick = () => {
+                confirmDialog.style.display = 'none';
+                onConfirm();
+            };
+
+            confirmNoBtn.onclick = () => {
+                confirmDialog.style.display = 'none';
+            };
+        }
+
+        // Initial version check
+        fetch(buildUrl + "/version.json")
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Không lấy được thông tin phiên bản');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const versionInfo = `
+                    Phiên bản bài học: ${data.gameVersion}<br>
+                    Ngày cập nhật: ${new Date(data.buildDate).toLocaleString()}
+                `;
+                document.getElementById('game-version').innerHTML = versionInfo;
+                localStorage.setItem('gameVersion', data.gameVersion);
+            })
+            .catch(error => {
+                console.error('Lỗi cập nhật phiên bản bài học:', error);
+                document.getElementById('game-version').textContent = 'Không lấy được thông tin phiên bản';
+            });
+
+        // Version Management
+        async function checkVersion() {
+            try {
+                // Check cached version first
+                const cacheResponse = await caches.match(buildUrl + "/version.json");
+                const localVersion = cacheResponse ? (await cacheResponse.json()).gameVersion : null;
+
+                // Get live version with no-cache
+                const liveResponse = await fetch(`${buildUrl}/version.json?v=${new Date().getTime()}`, {
+                    cache: 'no-store',
+                    headers: {
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache'
+                    }
+                });
+
+                if (!liveResponse.ok) {
+                    throw new Error('Không lấy được dữ liệu từ máy chủ');
+                }
+
+                const liveData = await liveResponse.json();
+                const serverVersion = liveData.gameVersion;
+
+                // Update version display
+                const versionInfo = `
+                    Phiên bản bài học: ${localVersion || 'Chưa có'}<br>
+                    Ngày cập nhật: ${new Date(liveData.buildDate).toLocaleString()}
+                `;
+                document.getElementById('game-version').innerHTML = versionInfo;
+
+                // Update button state
+                const updateReloadBtn = document.getElementById('update-reload-btn');
+                const updateBadge = document.querySelector('.update-badge');
+                
+                if (!localVersion || localVersion !== serverVersion) {
+                    updateReloadBtn.classList.remove('reload');
+                    updateReloadBtn.classList.add('update');
+                    updateReloadBtn.querySelector('.icon').textContent = '↑';
+                    updateReloadBtn.querySelector('.text').textContent = 'Cập nhật bài học';
+                    updateBadge.style.display = 'block';
+                    updateBadge.textContent = 'MỚI';
+                    localStorage.setItem('serverVersion', serverVersion);
+                } else {
+                    updateReloadBtn.classList.remove('update');
+                    updateReloadBtn.classList.add('reload');
+                    updateReloadBtn.querySelector('.icon').textContent = '⟳';
+                    updateReloadBtn.querySelector('.text').textContent = 'Tải lại bài học';
+                    updateBadge.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Lỗi kiểm tra phiên bản:', error);
+                document.getElementById('game-version').textContent = 'Không lấy được thông tin phiên bản';
+            }
+        }
+
+        function updateButtonState() {
+            const updateReloadBtn = document.getElementById('update-reload-btn');
+            const updateBadge = document.querySelector('.update-badge');
+            
+            if (!currentVersion || currentVersion !== serverVersion) {
+                // Update available
+                updateReloadBtn.classList.remove('reload');
+                updateReloadBtn.classList.add('update');
+                updateReloadBtn.querySelector('.icon').textContent = '⭮';
+                updateReloadBtn.querySelector('.text').textContent = 'Cập nhật bài học';
+                updateBadge.style.display = 'block';
+                updateBadge.textContent = 'MỚI';
+            } else {
+                // No update needed, show reload
+                updateReloadBtn.classList.remove('update');
+                updateReloadBtn.classList.add('reload');
+                updateReloadBtn.querySelector('.icon').textContent = '⟳';
+                updateReloadBtn.querySelector('.text').textContent = 'Tải lại bài học';
+                updateBadge.style.display = 'none';
+            }
+        }
+
+        async function handleUpdateOrReload() {
+            const isUpdate = !currentVersion || currentVersion !== serverVersion;
+            const progressContainer = document.getElementById('update-progress-container');
+            const progressBar = document.getElementById('update-progress-bar');
+            const progressText = document.getElementById('update-progress-text');
+
+            const message = isUpdate ? 
+                'Bạn có muốn cập nhật bài học lên phiên bản mới nhất không?' : 
+                'Bạn có muốn tải lại bài học đã lưu không?';
+
+            showCustomConfirm(message, async () => {
+                try {
+                    progressContainer.style.display = 'block';
+                    progressBar.style.width = '0%';
+                    progressText.textContent = '0%';
+
+                    const unityFiles = [
+                        '{{{ LOADER_FILENAME }}}',
+                        '{{{ DATA_FILENAME }}}',
+                        '{{{ FRAMEWORK_FILENAME }}}',
+                        '{{{ CODE_FILENAME }}}'
+                    ];
+
+                    const messageChannel = new MessageChannel();
+                    let startTime = Date.now();
+                    
+                    messageChannel.port1.onmessage = async (event) => {
+                        const { type, progress } = event.data;
+                        if (type === 'UPDATE_PROGRESS') {
+                            const elapsedTime = Date.now() - startTime;
+                            const adjustedProgress = Math.min(progress, (elapsedTime / 3000) * 100);
+                            progressBar.style.width = `${adjustedProgress}%`;
+                            progressText.textContent = `${Math.round(adjustedProgress)}%`;
+                        } else if (type === 'UPDATE_PREPARED') {
+                            if (event.data.success) {
+                                const commitChannel = new MessageChannel();
+                                commitChannel.port1.onmessage = (commitEvent) => {
+                                    if (commitEvent.data.type === 'UPDATE_COMMITTED') {
+                                        showCustomAlert('Đã cập nhật/tải lại thành công! Trang sẽ tải lại ngay bây giờ.', () => {
+                                            progressContainer.style.display = 'none';
+                                            location.reload();
+                                        });
+                                    }
+                                };
+                                
+                                navigator.serviceWorker.ready.then(registration => {
+                                    registration.active.postMessage(
+                                        { type: 'COMMIT_UPDATE' },
+                                        [commitChannel.port2]
+                                    );
+                                });
+                            } else {
+                                throw new Error('Lỗi chuẩn bị cập nhật');
+                            }
+                        }
+                    };
+
+                    const registration = await navigator.serviceWorker.ready;
+                    registration.active.postMessage(
+                        {
+                            type: 'PREPARE_UPDATE',
+                            buildUrl: buildUrl,
+                            files: unityFiles
+                        },
+                        [messageChannel.port2]
+                    );
+
+                } catch (error) {
+                    console.error('Quá trình cập nhật/tải lại gặp lỗi:', error);
+                    showCustomAlert('Quá trình cập nhật/tải lại gặp lỗi. Vui lòng thử lại sau.');
+                    progressContainer.style.display = 'none';
+                }
+            });
+        }
+        // Clear cache functionality
+        async function clearCache() {
+            const confirmMessage = 'Bạn có chắc chắn muốn xóa dữ liệu bài học?';
+
+            showCustomConfirm(confirmMessage, async () => {
+                try {
+                    const messageChannel = new MessageChannel();
+                    messageChannel.port1.onmessage = (event) => {
+                        if (event.data.type === 'CACHES_CLEARED') {
+                            localStorage.clear();
+                            showCustomConfirm('Đã xóa dữ liệu bài học thành công! Bạn có muốn tải lại trang ngay bây giờ không?', () => {
+                                location.reload();
+                            });
+                        }
+                    };
+
+                    const registration = await navigator.serviceWorker.ready;
+                    registration.active.postMessage(
+                        { type: 'CLEAR_ALL_CACHES' },
+                        [messageChannel.port2]
+                    );
+                } catch (error) {
+                    console.error('Lỗi khi xóa dữ liệu bài học:', error);
+                    showCustomAlert('Lỗi khi xóa dữ liệu bài học. Vui lòng thử lại sau.');
+                }
+            });
+        }
+
+        // Event Listeners
+        document.getElementById('update-reload-btn').addEventListener('click', handleUpdateOrReload);
+        document.getElementById('clear-cache-btn').addEventListener('click', clearCache);
+
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(function(registration) {
+                        console.log('Service Worker registered successfully:', registration.scope);
+                        // Initial version check after service worker is ready
+                        checkVersion();
+                        
+                        // Set up periodic version checks (every 5 minutes)
+                        setInterval(checkVersion, 300000);
+                    })
+                    .catch(function(error) {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            });
+        }
+
+        // Service Worker Message Handling
+        navigator.serviceWorker.addEventListener('message', (event) => {
+            if (event.data.type === 'UPDATE_READY') {
+                showCustomConfirm('Đã tải xuống thành công phiên bản mới. Bạn có muốn tải lại trang để cập nhật thay đổi không?', () => {
+                    location.reload();
+                });
+            }
+        });
+    </script>
+</body>
+</html>

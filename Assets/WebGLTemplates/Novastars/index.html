@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Unity WebGL Player | {{{ PRODUCT_NAME }}}</title>
+    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <link rel="stylesheet" href="TemplateData/style.css">
+    <style>
+        .custom-alert {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+            width: 30vw;
+            height: 40vh;
+            text-align: center;
+            font-size: 32px;
+        }
+        
+        .custom-alert p {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        
+        .custom-alert-button-container {
+            text-align: center;
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+        }
+        
+        .confirm-dialog {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 1001;
+            width: 300px;
+            text-align: center;
+        }
+        
+        .confirm-dialog p {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .confirm-dialog button {
+            margin: 0 10px;
+            padding: 5px 20px;
+            font-size: 14px;
+        }
+        
+        /* Unity Loading Bar */
+        #unity-loading-bar {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        #unity-logo {
+            transform: scale(0.8);
+            transform-origin: center;
+        }
+        
+        #unity-progress-bar-empty {
+            transform: scale(0.8);
+            transform-origin: center;
+            margin-top: 5px;
+        }
+        
+        #unity-progress-bar-full {
+            transition: width 0.5s ease;
+            transform: scale(0.8);
+            transform-origin: left;
+        }
+        
+        /* Footer Layout */
+        #unity-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 10px;
+            background-color: #f0f0f0;
+            box-sizing: border-box;
+        }
+        
+        /* Left Section */
+        #left-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        #game-version {
+            font-size: 12px;
+            white-space: nowrap;
+            margin-bottom: 5px;
+        }
+        
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            width: 100%;
+        }
+        
+        .button-row {
+            display: flex;
+            gap: 5px;
+            width: 100%;
+        }
+        
+        /* Button Styles */
+        .custom-button {
+            flex: 1;
+            white-space: nowrap;
+            padding: 5px 10px;
+            font-size: 14px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+            transition: background-color 0.3s;
+            background-color: #4CAF50;
+        }
+        
+        .custom-button:hover {
+            background-color: #45a049;
+        }
+        
+        .custom-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .custom-button.delete {
+            background-color: #f44336;
+        }
+        
+        .custom-button.delete:hover {
+            background-color: #da190b;
+        }
+        
+        .custom-button.reload {
+            background-color: #2196F3;
+        }
+        
+        .custom-button.reload:hover {
+            background-color: #0b7dda;
+        }
+        
+        /* Icon Buttons */
+        .icon-button {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f44336;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+        }
+        
+        .icon-button.reload {
+            background-color: #4CAF50;
+        }
+        
+        /* Right Section */
+        #right-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .fullscreen-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            flex-direction: row-reverse; /* This will put the button on the right */
+        }
+        
+        #unity-fullscreen-button {
+            width: 24px;
+            height: 24px;
+            min-width: 24px; /* Prevent shrinking */
+            background-color: #4a4a4a;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-left: 8px; /* Add some space between text and button */
+        }
+        
+        #unity-build-title {
+            font-size: 12px;
+            text-align: right;
+        }
+        
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            margin: 0;
+        }
+        
+        .progress-bar {
+            width: 0%;
+            height: 20px;
+            background-color: #4CAF50;
+            border-radius: 5px;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+        
+        .progress-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
+            color: white;
+            line-height: 20px;
+            pointer-events: none;
+        }
+        /* Debug Panel Icon Button Styling */
+        .nav-icon-button {
+            background:#555;
+            color:white;
+            border:none;
+            border-radius: 50%; /* Make it round */
+            width: 36px; /* Adjust size */
+            height: 36px; /* Adjust size */
+            font-size: 18px; /* Adjust icon size */
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        .nav-icon-button:hover {
+            background: #777;
+        }
+        /* Style for active auto forward/backward buttons */
+        .debug-button.active {
+            background: #F44336 !important; /* Use !important to override inline style if needed */
+        }
+    </style>
+</head>
+<body>
+    <div id="unity-container" class="unity-desktop">
+        <canvas id="unity-canvas" width={{{ WIDTH }}} height={{{ HEIGHT }}}></canvas>
+        <div id="unity-loading-bar">
+            <div id="unity-logo"></div>
+            <div id="unity-progress-bar-empty">
+                <div id="unity-progress-bar-full"></div>
+            </div>
+        </div>
+        <div id="unity-warning"></div>
+        <div id="unity-footer">
+            <div id="left-section">
+                <div id="version-line">
+                    <span id="game-version">Đang cập nhật phiên bản bài học...</span>
+                </div>
+                <div class="button-container">
+                    <div class="button-row">
+                        <button id="check-update-btn" class="custom-button">Kiểm tra cập nhật mới</button>
+                        <button id="update-btn" class="custom-button" disabled>Cập nhật bài học</button>
+                    </div>
+                    <div class="button-row">
+                        <button id="reload-cache-btn" class="custom-button reload">⟳ Tải lại bài học</button>
+                        <button id="clear-cache-btn" class="custom-button delete">🗑️ Xóa bài học</button>
+                    </div>
+                </div>
+            </div>
+            <div id="right-section">
+                <div class="fullscreen-row">
+                    <div id="unity-fullscreen-button"></div>
+                    <span id="unity-build-title">Nút phóng to phần mềm (Bấm ESC để thu nhỏ)</span>
+                </div>
+                <div id="update-progress-container" class="progress-container">
+                    <div id="update-progress-bar" class="progress-bar">
+                        <span id="update-progress-text" class="progress-text"></span>
+                    </div>
+                </div>
+            </div>
+        </div>        
+    </div>
+    <div id="customAlert" class="custom-alert">
+        <p id="alertMessage"></p>
+        <div class="custom-alert-button-container">
+            <button onclick="closeCustomAlert()" class="custom-button">OK</button>
+        </div>
+    </div>
+    <div id="confirmDialog" class="confirm-dialog">
+        <p id="confirmMessage"></p>
+        <button id="confirmYes" class="custom-button">Có</button>
+        <button id="confirmNo" class="custom-button">Không</button>
+    </div>
+    <div id="debug-panel" style="position:absolute; right:0; top:0; width:300px; /* <-- Adjusted width */ height:calc(100% - 20px); background:rgba(30,30,30,0.9); color:#f0f0f0; border-radius:8px; padding:15px; font-family:'Segoe UI', Arial, sans-serif; font-size:13px; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.3); border:1px solid #444; overflow-y:auto; margin:10px; display: none; /* <-- Initially hidden */">
+
+        <div id="debug-panel-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #555;">
+            <h3 style="margin:0; font-size:16px; font-weight:600; color:#fff;">Debug Panel</h3>
+            <button onclick="toggleDebugPanel()" style="background:#ff4d4d; border:none; color:white; border-radius:4px; padding:4px 10px; cursor:pointer; font-weight:bold; transition:background 0.2s;">✕</button>
+        </div>
+
+        <div id="game-speed-controls" style="margin-bottom: 20px;">
+            <div style="margin-bottom:10px; color:#aaa; font-weight:500; border-bottom:1px solid #444; padding-bottom:5px;">Game Speed Controls</div>
+            <div style="margin-bottom:12px;">
+                <div style="margin-bottom:5px; color:#aaa; font-weight:500;">Speed:</div>
+                <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:8px; margin-bottom:8px;">
+                    <button class="debug-button" onclick="changeGameSpeed(0.5)" style="background:#4CAF50; color:white; border:none; padding:8px; border-radius:4px; cursor:pointer; transition:background 0.2s;">0.5×</button>
+                    <button class="debug-button" onclick="changeGameSpeed(1)" style="background:#4CAF50; color:white; border:none; padding:8px; border-radius:4px; cursor:pointer; transition:background 0.2s;">1×</button>
+                    <button class="debug-button" onclick="changeGameSpeed(2)" style="background:#FF9800; color:white; border:none; padding:8px; border-radius:4px; cursor:pointer; transition:background 0.2s;">2×</button>
+                    <button class="debug-button" onclick="changeGameSpeed(4)" style="background:#F44336; color:white; border:none; padding:8px; border-radius:4px; cursor:pointer; transition:background 0.2s;">4×</button>
+                    <button class="debug-button" onclick="changeGameSpeed(8)" style="background:#F44336; color:white; border:none; padding:8px; border-radius:4px; cursor:pointer; transition:background 0.2s;">8×</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                    <span style="color:#aaa; font-weight:500; white-space:nowrap;">Custom:</span>
+                    <input type="range" id="speed-slider" min="0.1" max="10" step="0.1" value="1" style="flex:1;">
+                    <span id="speed-value" style="font-family:monospace; color:#fff; min-width:40px; text-align:right;">1.0×</span>
+                    <button onclick="applyCustomSpeed()" style="background:#555; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Apply</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="navigation-controls" style="margin-bottom: 20px;">
+            <div style="margin-bottom:10px; color:#aaa; font-weight:500; border-bottom:1px solid #444; padding-bottom:5px;">Navigation Controls</div>
+
+            <div style="display:flex; justify-content:space-around; align-items: center; gap:5px; margin-bottom:15px;">
+                <button id="fast-rewind-btn" class="debug-button nav-icon-button" onclick="goToStart()" title="Go to Start">⏪</button> 
+                <button class="debug-button nav-icon-button" onclick="simulateKeyPress('ArrowLeft')" title="Back">⏮</button>
+                <button class="debug-button nav-icon-button" onclick="simulateKeyPress('Space')" title="Play/Pause">⏯</button>
+                <button class="debug-button nav-icon-button" onclick="simulateKeyPress('ArrowRight')" title="Forward">⏭</button>
+                <button id="fast-forward-timed-btn" class="debug-button nav-icon-button" onclick="goToEnd()" title="Go to End">⏩</button> </div>
+
+            <div style="margin-bottom:15px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="color:#aaa; font-weight:500; white-space:nowrap;">Interval:</span>
+                    <input type="range" id="click-interval" min="100" max="2000" step="100" value="500" style="flex:1;">
+                    <span id="interval-value" style="font-family:monospace; color:#fff; min-width:50px; text-align:right;">500ms</span>
+                </div>
+                <small style="color:#888; font-size:11px;">(Used for Fast Forward/Rewind)</small>
+            </div>
+
+            <div style="display:flex; gap:8px; margin-bottom:8px; margin-top: 10px;">
+                <button class="debug-button" id="fast-back-btn" onclick="toggleFastBackward()" style="background:#555; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer; transition:background 0.2s; flex:1; display:flex; align-items:center; justify-content:center; gap:5px;">
+                    <span style="font-size:16px;">⏪</span> Rewind
+                </button>
+                <button class="debug-button" id="fast-forward-btn" onclick="toggleFastForward()" style="background:#555; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer; transition:background 0.2s; flex:1; display:flex; align-items:center; justify-content:center; gap:5px;">
+                    <span style="font-size:16px;">⏩</span> Fast forward
+                </button>
+            </div>
+
+        </div>
+
+        <div id="debug-status-bar" style="position:relative; background:#222; padding:10px 15px; font-size:12px; border-radius:4px; margin-top:15px; display:flex; flex-direction:column; gap:5px; /* Reduced gap slightly */">
+
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px; /* Added more gap */">
+                <span style="flex-shrink: 0; display: flex; align-items: center; gap: 5px;" title="Frames Per Second">
+                    <span style="color:#4CAF50;">🖥️</span>
+                    <span id="debug-fps" style="font-family:monospace;">0 FPS</span>
+                </span>
+                <span style="flex-shrink: 0; display: flex; align-items: center; gap: 5px;" title="Memory Usage">
+                    <span style="color:#2196F3;">💾</span>
+                    <span id="debug-memory" style="font-family:monospace;">0 MB</span>
+                </span>
+            </div>
+        
+            <div style="border-top: 1px solid #444; margin: 2px 0;"></div>
+        
+            <div style="display: flex; align-items: center; gap: 8px;" title="Current Camera">
+                <span style="color:#FF9800; flex-shrink: 0;">📷</span>
+                <span id="debug-camera" style="font-family:monospace; color:#ccc; word-break: break-all;">N/A</span>
+            </div>
+        
+            <div style="display: flex; align-items: center; gap: 8px;" title="Current Audio Source(s)">
+                <span style="color:#F44336; flex-shrink: 0;">🔊</span>
+                <span id="debug-audio" style="font-family:monospace; color:#ccc; word-break: break-all;">N/A</span>
+            </div>
+        
+            <div style="border-top: 1px solid #444; margin: 2px 0;"></div>
+        
+            <div style="display: flex; align-items: center; gap: 8px;" title="Screen Resolution">
+                 <span style="color:#aaa; font-weight: 500; flex-shrink: 0;">Res:</span>
+                 <span id="debug-resolution" style="font-family:monospace; color:#ddd;">0x0</span>
+            </div>
+        
+            <div style="display: flex; align-items: flex-start; gap: 8px;" title="User Agent">
+                 <span style="color:#aaa; font-weight: 500; flex-shrink: 0;">UA:</span>
+                 <span id="debug-useragent" style="font-size:11px; color:#bbb; word-break: break-all;"></span>
+            </div>
+        
+            <div id="debug-status-text" style="font-size:11px; color:#FFEB3B; margin-top: 4px; text-align: center; min-height: 1em; border-top: 1px solid #444; padding-top: 5px;"></div>
+        </div>
+    <script>
+        function getWebGLPath() {
+            const path = window.location.pathname;
+            const match = path.match(/\/webgl\/[^/]+\//);
+            return match ? match[0] : '/';
+        }
+
+        // Get the dynamic webgl path
+        const webglPath = getWebGLPath();
+
+        // Update buildUrl to use dynamic path
+        const buildUrl = `${webglPath}Build`;
+        const loaderUrl = buildUrl + "/{{{ LOADER_FILENAME }}}";
+        const versionUrl = buildUrl + "/version.json";
+        const config = {
+            dataUrl: buildUrl + "/{{{ DATA_FILENAME }}}",
+            frameworkUrl: buildUrl + "/{{{ FRAMEWORK_FILENAME }}}",
+            codeUrl: buildUrl + "/{{{ CODE_FILENAME }}}",
+        #if MEMORY_FILENAME
+            memoryUrl: buildUrl + "/{{{ MEMORY_FILENAME }}}",
+        #endif
+        #if SYMBOLS_FILENAME
+            symbolsUrl: buildUrl + "/{{{ SYMBOLS_FILENAME }}}",
+        #endif
+            streamingAssetsUrl: "StreamingAssets",
+            companyName: "{{{ COMPANY_NAME }}}",
+            productName: "{{{ PRODUCT_NAME }}}",
+            productVersion: "{{{ PRODUCT_VERSION }}}",
+        };
+    
+        var container = document.querySelector("#unity-container");
+        var canvas = document.querySelector("#unity-canvas");
+        var loadingBar = document.querySelector("#unity-loading-bar");
+        var progressBarFull = document.querySelector("#unity-progress-bar-full");
+        var fullscreenButton = document.querySelector("#unity-fullscreen-button");
+        var warningBanner = document.querySelector("#unity-warning");
+        var gameInstance = null; // Moved declaration here to be accessible globally
+    
+        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+            container.className = "unity-mobile";
+            config.devicePixelRatio = 1;
+            unityShowBanner('WebGL builds are not supported on mobile devices.');
+        } else {
+            canvas.style.width = "{{{ WIDTH }}}px";
+            canvas.style.height = "{{{ HEIGHT }}}px";
+        }
+    #if BACKGROUND_FILENAME
+        canvas.style.background = "url('" + buildUrl + "/{{{ BACKGROUND_FILENAME.replace(/'/g, '%27') }}}') center / cover";
+    #endif
+        loadingBar.style.display = "block";
+    
+        var script = document.createElement("script");
+        script.src = loaderUrl;
+        script.onload = () => {
+            createUnityInstance(canvas, config, (progress) => {
+                progressBarFull.style.width = 100 * progress + "%";
+            }).then((unityInstance) => {
+                gameInstance = unityInstance; // <<< ASSIGN gameInstance HERE
+                loadingBar.style.display = "none";
+                fullscreenButton.onclick = () => {
+                    unityInstance.SetFullscreen(1);
+                };
+            }).catch((message) => {
+                alert(message);
+            });
+        };
+        document.body.appendChild(script);
+
+        function unityShowBanner(msg, type) {
+            function updateBannerVisibility() {
+                warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+            }
+            var div = document.createElement('div');
+            div.innerHTML = msg;
+            warningBanner.appendChild(div);
+            if (type == 'error') div.style = 'background: red; padding: 10px;';
+            else {
+                if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
+                setTimeout(function() {
+                    warningBanner.removeChild(div);
+                    updateBannerVisibility();
+                }, 5000);
+            }
+            updateBannerVisibility();
+        }
+
+        // var gameInstance = null; // Declaration moved higher up
+        var gameStarted = false;
+
+        function showCustomAlert(message, onClose) {
+            document.getElementById('alertMessage').textContent = message;
+            const alertElement = document.getElementById('customAlert');
+            alertElement.style.display = 'block';
+
+            // Modify the button to execute the callback after closing the alert
+            const button = alertElement.querySelector('button');
+            button.onclick = () => {
+                alertElement.style.display = 'none';
+                if (onClose) onClose(); // Execute the callback if provided
+            };
+        }
+
+        function closeCustomAlert() {
+            document.getElementById('customAlert').style.display = 'none';
+        }
+
+        function showCustomConfirm(message, onConfirm) {
+            document.getElementById('confirmMessage').textContent = message;
+            const confirmDialog = document.getElementById('confirmDialog');
+            confirmDialog.style.display = 'block';
+
+            const confirmYesBtn = document.getElementById('confirmYes');
+            const confirmNoBtn = document.getElementById('confirmNo');
+
+            confirmYesBtn.onclick = () => {
+                confirmDialog.style.display = 'none';
+                onConfirm();
+            };
+
+            confirmNoBtn.onclick = () => {
+                confirmDialog.style.display = 'none';
+            };
+        }
+
+        // Initial version check
+        fetch(buildUrl + "/version.json")
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Không lấy được thông tin phiên bản');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const versionInfo = `
+                    Phiên bản bài học: ${data.gameVersion}<br>
+                    Ngày cập nhật: ${new Date(data.buildDate).toLocaleString()}
+                `;
+                document.getElementById('game-version').innerHTML = versionInfo;
+                localStorage.setItem('gameVersion', data.gameVersion);
+            })
+            .catch(error => {
+                console.error('Lỗi cập nhật phiên bản bài học:', error);
+                document.getElementById('game-version').textContent = 'Không lấy được thông tin phiên bản';
+            });
+
+            async function checkForUpdate() {
+                try {
+                    // Check cached version first
+                    const cacheResponse = await caches.match(buildUrl + "/version.json");
+                    const localVersion = cacheResponse ? (await cacheResponse.json()).gameVersion : null;
+
+                    // Get live version with no-cache
+                    const liveResponse = await fetch(`${buildUrl}/version.json?v=${new Date().getTime()}`, {
+                        cache: 'no-store',
+                        headers: {
+                            'Cache-Control': 'no-cache',
+                            'Pragma': 'no-cache'
+                        }
+                    });
+
+                    if (!liveResponse.ok) {
+                        throw new Error('Không lấy được dữ liệu từ máy chủ');
+                    }
+
+                    const liveData = await liveResponse.json();
+                    const serverVersion = liveData.gameVersion;
+
+                    console.log('Cached version:', localVersion);
+                    console.log('Server version:', serverVersion);
+
+                    if (!localVersion || localVersion !== serverVersion) {
+                        showCustomAlert('Đã có phiên bản cập nhật mới cho bài học!');
+                        document.getElementById('update-btn').disabled = false;
+                        localStorage.setItem('serverVersion', serverVersion);
+                    } else {
+                        showCustomAlert('Phiên bản hiện tại là mới nhất!');
+                        document.getElementById('update-btn').disabled = true;  // Add this line
+                    }
+                } catch (error) {
+                    console.error('Lỗi kiểm tra cập nhật:', error);
+                    showCustomAlert('Lỗi kiểm tra cập nhật. Vui lòng thử lại sau.');
+                }
+            }
+
+        async function updateOrReload(isUpdate) {
+            const progressContainer = document.getElementById('update-progress-container');
+            const progressBar = document.getElementById('update-progress-bar');
+            const progressText = document.getElementById('update-progress-text');
+
+            const message = isUpdate ? 'Bạn có muốn cập nhật bài học lên phiên bản mới nhất không?' : 'Bạn có muốn tải lại bài học đã lưu không?';
+
+            showCustomConfirm(message, async () => {
+                try {
+                    progressContainer.style.display = 'block'; // Show the progress container
+                    progressBar.style.width = '0%';
+                    progressText.textContent = '0%';
+
+                    const unityFiles = [
+                        '{{{ LOADER_FILENAME }}}',
+                        '{{{ DATA_FILENAME }}}',
+                        '{{{ FRAMEWORK_FILENAME }}}',
+                        '{{{ CODE_FILENAME }}}'
+                    ];
+
+                    const messageChannel = new MessageChannel();
+                    let startTime = Date.now();
+                    messageChannel.port1.onmessage = async (event) => {
+                        const { type, progress } = event.data;
+                        if (type === 'UPDATE_PROGRESS') {
+                            const elapsedTime = Date.now() - startTime;
+                            const adjustedProgress = Math.min(progress, (elapsedTime / 3000) * 100);
+                            progressBar.style.width = `${adjustedProgress}%`;
+                            progressText.textContent = `${Math.round(adjustedProgress)}%`;
+                        } else if (type === 'UPDATE_PREPARED') {
+                            if (event.data.success) {
+                                const commitChannel = new MessageChannel();
+                                commitChannel.port1.onmessage = (commitEvent) => {
+                                    if (commitEvent.data.type === 'UPDATE_COMMITTED') {
+                                        showCustomAlert('Đã cập nhật/tải lại thành công! Trang sẽ tải lại ngay bây giờ.', () => {
+                                            progressContainer.style.display = 'none';
+                                            location.reload();
+                                        });
+                                    }
+                                };
+                                
+                                navigator.serviceWorker.ready.then(registration => {
+                                    registration.active.postMessage(
+                                        { type: 'COMMIT_UPDATE' },
+                                        [commitChannel.port2]
+                                    );
+                                });
+                            } else {
+                                throw new Error('Lỗi chuẩn bị cập nhật');
+                            }
+                        } else if (type === 'UPDATE_COMMITTED') {
+                            showCustomAlert('Đã cập nhật/tải lại thành công! Trang sẽ tải lại ngay bây giờ.', () => {
+                                progressContainer.style.display = 'none';
+                                location.reload();
+                            });
+                        }
+                    };
+
+                    const registration = await navigator.serviceWorker.ready;
+                    registration.active.postMessage(
+                        {
+                            type: 'PREPARE_UPDATE',
+                            buildUrl: `${webglPath}Build`,
+                            files: unityFiles
+                        },
+                        [messageChannel.port2]
+                    );
+
+                } catch (error) {
+                    console.error('Quá trình cập nhật/tải lại gặp lỗi:', error);
+                    showCustomAlert('Quá trình cập nhật/tải lại gặp lỗi. Vui lòng thử lại sau.');
+                }
+            });
+        }
+
+        async function clearCache() {
+            const confirmMessage = gameStarted 
+                ? 'Bạn có chắc chắn muốn xóa dữ liệu bài học đã lưu? Dữ liệu bài học hiện tại sẽ bị mất.'
+                : 'Bạn có chắc chắn muốn xóa dữ liệu bài học?';
+
+            showCustomConfirm(confirmMessage, async () => {
+                try {
+                    const messageChannel = new MessageChannel();
+                    messageChannel.port1.onmessage = (event) => {
+                        if (event.data.type === 'CACHES_CLEARED') {
+                            localStorage.clear();
+                            showCustomConfirm('Đã xóa dữ liệu bài học thành công! Bạn có muốn tải lại trang ngay bây giờ không?', () => {
+                                location.reload();
+                            });
+                        }
+                    };
+
+                    const registration = await navigator.serviceWorker.ready;
+                    registration.active.postMessage(
+                        { type: 'CLEAR_ALL_CACHES' },
+                        [messageChannel.port2]
+                    );
+                } catch (error) {
+                    console.error('Lỗi khi xóa dữ liệu bài học:', error);
+                    showCustomAlert('Lỗi khi xóa dữ liệu bài học. Vui lòng thử lại sau.');
+                }
+            });
+        }
+
+        // Event Listeners
+        document.getElementById('check-update-btn').addEventListener('click', checkForUpdate);
+        document.getElementById('clear-cache-btn').addEventListener('click', clearCache);
+        document.getElementById('update-btn').addEventListener('click', () => {
+            updateOrReload(true); // Trigger the update process
+        });
+
+        document.getElementById('reload-cache-btn').addEventListener('click', () => {
+            updateOrReload(false); // Trigger the reload process
+        });
+
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(function(registration) {
+                        console.log('Service Worker registered successfully:', registration.scope);
+                    })
+                    .catch(function(error) {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            });
+        }
+
+        // Service Worker Message Handling
+        navigator.serviceWorker.addEventListener('message', (event) => {
+            if (event.data.type === 'UPDATE_READY') {
+                showCustomConfirm('Đã tải xuống thành công phiên bản mới. Bạn có muốn tải lại trang để cập nhật thay đổi không?', () => {
+                    location.reload();
+                });
+            }
+        });
+    // --- Debug Panel Logic Starts --- // <-- CORRECTLY PLACED COMMENT
+    // Note: gameInstance should be assigned globally in the Unity loader script block above
+    let debugPanelVisible = false;
+    let debugFPS = 0;
+    let debugFrameCount = 0;
+    let debugLastTime = performance.now(); // Initialize lastTime
+    let debugInfoInterval = null; // Changed from undefined to null
+
+    // Debug panel variables for auto-navigation
+    let fastForwardInterval = null;
+    let fastBackwardInterval = null;
+
+    // Variables for the timed GoTo Start/End intervals
+    let goToStartInterval = null;
+    let goToEndInterval = null;
+    let goToTimeout = null; // To store the setTimeout ID
+
+    // Called from Unity to update camera/audio info
+    function updateDebugSceneInfo(cameraInfo, audioInfo) { // Renamed parameters for clarity
+        // console.log("Received Debug Info - Camera:", cameraInfo, "Audio:", audioInfo); // For debugging
+        const camElem = document.getElementById('debug-camera');
+        const audioElem = document.getElementById('debug-audio');
+
+        if (camElem) {
+            camElem.textContent = cameraInfo ? cameraInfo.split('|')[0] || 'N/A' : 'N/A'; // Show first camera or N/A
+             camElem.style.color = cameraInfo ? '#fff' : '#ccc';
+        }
+        if (audioElem) {
+             audioElem.textContent = audioInfo ? audioInfo.split('|')[0] || 'N/A' : 'N/A'; // Show first playing audio or N/A
+             audioElem.style.color = audioInfo ? '#fff' : '#ccc';
+        }
+    }
+
+    // Toggles visibility and starts/stops update interval
+    function toggleDebugPanel() {
+        debugPanelVisible = !debugPanelVisible;
+        const panel = document.getElementById('debug-panel');
+        if (!panel) return; // Safety check
+
+        panel.style.display = debugPanelVisible ? 'block' : 'none';
+
+        if (debugPanelVisible) {
+            if (debugInfoInterval === null) { // Only start if not already running
+                 console.log("JS: Opening debug panel, starting updates."); // Added log
+                 updateDebugInfo(); // Update immediately
+                 debugInfoInterval = setInterval(updateDebugInfo, 1000); // Update every second (changed from 500ms)
+                 initializeDebugControls(); // Initialize sliders etc.
+            }
+        } else {
+            if (debugInfoInterval !== null) {
+                console.log("JS: Closing debug panel, stopping updates.");
+                clearInterval(debugInfoInterval);
+                debugInfoInterval = null;
+            }
+            // Clean up ALL intervals if panel is closed
+            stopAllAutoNavigation(); // Call helper function
+        }
+    }
+
+    // Updates FPS, Memory, Resolution, UserAgent
+     function updateDebugInfo() {
+         const now = performance.now();
+         debugFrameCount++;
+         // Calculate FPS over the last second
+         if (now >= debugLastTime + 1000) {
+             debugFPS = Math.round((debugFrameCount * 1000) / (now - debugLastTime));
+             debugFrameCount = 0;
+             debugLastTime = now;
+             const fpsElem = document.getElementById('debug-fps');
+             // Check if element exists before updating
+             if (fpsElem) fpsElem.textContent = debugFPS + ' FPS';
+             else console.warn("JS: Element #debug-fps not found.");
+         }
+
+         // Update other info less frequently if needed, or keep at 1s interval
+         const memElem = document.getElementById('debug-memory');
+         if (memElem) {
+             memElem.textContent =
+                 (typeof performance !== 'undefined' && performance.memory && performance.memory.usedJSHeapSize) // Added typeof check
+                 ? Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) + ' MB'
+                 : 'N/A';
+         } else console.warn("JS: Element #debug-memory not found.");
+
+
+        const resElem = document.getElementById('debug-resolution');
+        if (resElem) {
+            resElem.textContent = 'Res: ' + window.innerWidth + 'x' + window.innerHeight;
+        } else console.warn("JS: Element #debug-resolution not found.");
+
+
+         const uaElem = document.getElementById('debug-useragent');
+         if (uaElem) {
+             uaElem.textContent = navigator.userAgent;
+             uaElem.title = navigator.userAgent; // Add title for full view on hover
+         } else console.warn("JS: Element #debug-useragent not found.");
+
+
+        // Request updated scene info from Unity (optional, adjust frequency as needed)
+        // Ensure SendDebugSceneInfo exists and is callable in your GameController script
+         if (typeof gameInstance !== 'undefined' && gameInstance !== null && typeof gameInstance.SendMessage === 'function') { // Check if SendMessage is a function
+             // console.log("Requesting scene info from Unity..."); // Debug log
+             try { // Add try-catch for safety
+                // gameInstance.SendMessage('GameController', 'SendDebugSceneInfo'); // Make sure object name 'GameController' is correct
+             } catch(e) {
+                console.error("JS: Error calling SendDebugSceneInfo", e);
+             }
+         } else {
+             // Only log warning if panel is visible and instance is expected
+             // if (debugPanelVisible) console.warn("Unity instance not ready for SendDebugSceneInfo call.");
+         }
+    }
+
+// Check Unity Connection before Sending Message (Helper function)
+function sendMessageToUnity(gameObjectName, methodName, value) {
+         console.log(`JS: Attempting SendMessage: GO='${gameObjectName}', Method='${methodName}', Value='${value}'`);
+         // <<< CORRECTION IS HERE: Changed 'GameController' to 'Canvas' >>>
+         const targetObjectName = 'Canvas'; // Use 'Canvas' or the correct name from your Unity project
+         // <<< END CORRECTION >>>
+
+         if (typeof gameInstance !== 'undefined' && gameInstance !== null && typeof gameInstance.SendMessage === 'function') { // Check function exists
+             try {
+                 // Use targetObjectName instead of the parameter
+                 gameInstance.SendMessage(targetObjectName, methodName, value);
+                 console.log(`JS: SendMessage to ${targetObjectName} successful.`);
+             } catch (e) {
+                 console.error(`JS: Error calling SendMessage(${targetObjectName}, ${methodName}, ${value}):`, e);
+                 showStatus(`Error: Unity call failed (${methodName}). ${e.message}`);
+             }
+         } else {
+             console.warn(`JS: Unity instance 'gameInstance' not ready or SendMessage unavailable. Cannot call ${methodName}.`);
+             showStatus("Error: Unity connection not ready.");
+         }
+    }
+
+    // Button Actions using the helper function
+    function simulateKeyPress(key) {
+        console.log("JS: simulateKeyPress called with key:", key);
+        // No need to pass gameObjectName here anymore as it's handled in sendMessageToUnity
+        sendMessageToUnity(null, 'SimulateKeyPress', key);
+    }
+
+    function changeGameSpeed(speed) {
+        console.log("JS: changeGameSpeed called with speed:", speed);
+        const speedNum = Number(speed); // Ensure it's a number
+        // No need to pass gameObjectName here anymore
+        sendMessageToUnity(null, 'SetGameSpeed', speedNum);
+        // Update slider/display
+        const speedSlider = document.getElementById('speed-slider');
+        const speedValue = document.getElementById('speed-value');
+        if(speedSlider) speedSlider.value = speedNum;
+        if(speedValue) speedValue.textContent = speedNum.toFixed(1) + '×';
+    }
+
+    function applyCustomSpeed() {
+        console.log("JS: applyCustomSpeed called");
+        const speed = parseFloat(document.getElementById('speed-slider').value);
+        changeGameSpeed(speed); // Reuses the function which now uses the helper correctly
+    }
+
+    // Toggle continuous auto-forwarding
+    function toggleFastForward() {
+        console.log("JS: toggleFastForward called");
+        const ffBtn = document.getElementById('fast-forward-btn');
+        if (!ffBtn) return;
+
+        // Check if THIS specific interval is running
+        if (fastForwardInterval) {
+            // If it is running, stop everything and update status
+            stopAllAutoNavigation();
+            // Status message is handled by stopAllAutoNavigation now
+        } else {
+            // If it's not running, stop any OTHER navigation first
+            stopAllAutoNavigation();
+
+            // Then, start this one
+            const interval = parseInt(document.getElementById('click-interval').value);
+            ffBtn.classList.add('active');
+            ffBtn.innerHTML = '<span style="font-size:16px;">⏹️</span> Stop';
+            showStatus('Auto fast forwarding every ' + interval + 'ms...');
+            simulateKeyPress('ArrowRight'); // Initial press
+            fastForwardInterval = setInterval(() => simulateKeyPress('ArrowRight'), interval);
+        }
+    }
+
+    // Toggle continuous auto-backwarding
+    function toggleFastBackward() {
+        console.log("JS: toggleFastBackward called");
+        const fbBtn = document.getElementById('fast-back-btn');
+        if (!fbBtn) return;
+
+        // Check if THIS specific interval is running
+        if (fastBackwardInterval) {
+            // If it is running, stop everything and update status
+            stopAllAutoNavigation();
+            // Status message is handled by stopAllAutoNavigation now
+        } else {
+            // If it's not running, stop any OTHER navigation first
+            stopAllAutoNavigation();
+
+            // Then, start this one
+            const interval = parseInt(document.getElementById('click-interval').value);
+            fbBtn.classList.add('active');
+            fbBtn.innerHTML = '<span style="font-size:16px;">⏹️</span> Stop Auto';
+            showStatus('Auto rewinding every ' + interval + 'ms...');
+            simulateKeyPress('ArrowLeft'); // Initial press
+            fastBackwardInterval = setInterval(() => simulateKeyPress('ArrowLeft'), interval);
+        }
+    }
+
+    // Helper function to stop all auto-navigation intervals & reset button states
+    function stopAllAutoNavigation() {
+        let stoppedSomething = false; // Flag to see if we actually stopped anything
+
+        // Clear Auto Forward/Backward
+        if (fastForwardInterval) {
+            clearInterval(fastForwardInterval); fastForwardInterval = null;
+            const ffBtn = document.getElementById('fast-forward-btn'); // Continuous auto-forward button
+            if (ffBtn) { ffBtn.classList.remove('active'); ffBtn.innerHTML = '<span style="font-size:16px;">⏩</span> Fast Forward'; }
+            stoppedSomething = true;
+        }
+        if (fastBackwardInterval) {
+            clearInterval(fastBackwardInterval); fastBackwardInterval = null;
+            const fbBtn = document.getElementById('fast-back-btn'); // Continuous auto-backward button
+            if (fbBtn) { fbBtn.classList.remove('active'); fbBtn.innerHTML = '<span style="font-size:16px;">⏪</span> Rewind'; }
+            stoppedSomething = true;
+        }
+
+        // Clear GoTo Start/End intervals and timeout
+        if (goToStartInterval) {
+            clearInterval(goToStartInterval); goToStartInterval = null;
+            const btn = document.getElementById('fast-rewind-btn'); // Timed button
+            if(btn) btn.classList.remove('active');
+            stoppedSomething = true;
+        }
+        if (goToEndInterval) {
+            clearInterval(goToEndInterval); goToEndInterval = null;
+            const btn = document.getElementById('fast-forward-timed-btn'); // Timed button
+            if(btn) btn.classList.remove('active');
+            stoppedSomething = true;
+        }
+        if (goToTimeout) {
+            clearTimeout(goToTimeout); goToTimeout = null;
+            // No button state change here, interval cleanup handles it
+        }
+
+        // Only show "stopped" message if something was actually running
+        if (stoppedSomething) {
+            showStatus('Auto-navigation stopped.');
+        }
+    }
+    
+    // *** GoToStart Functionality with Indicator ***
+    function goToStart() {
+        console.log("JS: goToStart (Rewind) called");
+        const btn = document.getElementById('fast-rewind-btn');
+        if(!btn) return;
+
+        // If this specific timed action is ALREADY running, stop it.
+        if (goToStartInterval) {
+            stopAllAutoNavigation(); // This will clear interval, timeout, and remove active class
+            return; // Don't restart it
+        }
+
+        stopAllAutoNavigation(); // Ensure other navigations are stopped
+
+        const fastInterval = 100;
+        const duration = 5000;
+
+        showStatus(`Rewind active (${duration/1000}s)...`);
+        btn.classList.add('active'); // <<< ADD Active class
+        simulateKeyPress('ArrowLeft'); // Initial press
+
+        goToStartInterval = setInterval(() => {
+            simulateKeyPress('ArrowLeft');
+        }, fastInterval);
+
+        // Set timeout to stop after the duration
+        goToTimeout = setTimeout(() => {
+            // Check if it hasn't been stopped already
+            if (goToStartInterval) {
+                clearInterval(goToStartInterval);
+                goToStartInterval = null;
+                if(btn) btn.classList.remove('active'); // <<< REMOVE Active class
+                showStatus('Rewind finished.');
+                console.log("JS: Rewind (goToStart) finished.");
+            }
+            goToTimeout = null; // Clear timeout ref
+        }, duration);
+    }
+
+    // *** GoToEnd Functionality with Indicator ***
+    function goToEnd() {
+        console.log("JS: goToEnd (Fast Forward) called");
+        const btn = document.getElementById('fast-forward-timed-btn');
+        if(!btn) return;
+
+        // If this specific timed action is ALREADY running, stop it.
+        if (goToEndInterval) {
+            stopAllAutoNavigation(); // This will clear interval, timeout, and remove active class
+            return; // Don't restart it
+        }
+
+        stopAllAutoNavigation(); // Ensure other navigations are stopped
+
+        const fastInterval = 100;
+        const duration = 5000;
+
+        showStatus(`Fast Forward active (${duration/1000}s)...`);
+        btn.classList.add('active'); // <<< ADD Active class
+        simulateKeyPress('ArrowRight'); // Initial press
+
+        goToEndInterval = setInterval(() => {
+            simulateKeyPress('ArrowRight');
+        }, fastInterval);
+
+        // Set timeout to stop after the duration
+        goToTimeout = setTimeout(() => {
+            // Check if it hasn't been stopped already
+            if (goToEndInterval) {
+                clearInterval(goToEndInterval);
+                goToEndInterval = null;
+                if(btn) btn.classList.remove('active'); // <<< REMOVE Active class
+                showStatus('Fast Forward finished.');
+                console.log("JS: Fast Forward (goToEnd) finished.");
+            }
+            goToTimeout = null; // Clear timeout ref
+        }, duration);
+    }
+
+     // Shows temporary status messages in the status bar
+    let statusTimeout = null;
+    function showStatus(message) {
+        console.log("JS Status:", message); // Log status messages
+        const statusElem = document.getElementById('debug-status-text');
+        // Check if element exists
+        if (!statusElem) {
+            console.warn("JS: Element #debug-status-text not found.");
+            return;
+        }
+        statusElem.textContent = message;
+        statusElem.style.display = 'block'; // Make sure it's visible
+
+        // Clear previous timeout if exists
+        if (statusTimeout) clearTimeout(statusTimeout);
+
+        // Set timeout to hide after 3 seconds
+        statusTimeout = setTimeout(function() {
+            statusElem.textContent = ''; // Clear text
+            // statusElem.style.display = 'none'; // Optional: hide element
+            statusTimeout = null;
+        }, 3000);
+    }
+
+    // Initializes sliders' display values
+    function initializeDebugControls() {
+        console.log("JS: Initializing debug controls..."); // Log initialization
+        // Initialize speed slider display
+        const speedSlider = document.getElementById('speed-slider');
+        const speedValue = document.getElementById('speed-value');
+        if (speedSlider && speedValue) {
+             speedValue.textContent = parseFloat(speedSlider.value).toFixed(1) + '×'; // Set initial display
+            speedSlider.addEventListener('input', function() {
+                speedValue.textContent = parseFloat(this.value).toFixed(1) + '×';
+            });
+             // Add event listener to APPLY speed on change (when user releases slider)
+             speedSlider.addEventListener('change', function() {
+                 applyCustomSpeed();
+             });
+        } else { console.warn("JS: Speed slider elements not found."); }
+
+
+        // Initialize interval slider display
+        const intervalSlider = document.getElementById('click-interval');
+        const intervalValue = document.getElementById('interval-value');
+        if (intervalSlider && intervalValue) {
+             intervalValue.textContent = intervalSlider.value + 'ms'; // Set initial display
+            intervalSlider.addEventListener('input', function() {
+                intervalValue.textContent = this.value + 'ms';
+            });
+        } else { console.warn("JS: Interval slider elements not found."); }
+    }
+
+    // Keyboard shortcut listener for debug panel
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.shiftKey && e.key === 'F8') { // Check for Ctrl+Shift+F8
+            console.log("JS: Ctrl+Shift+F8 detected."); // Log shortcut
+            toggleDebugPanel();
+            e.preventDefault(); // Prevent default browser action for F8
+        }
+    });
+    </script>
+</body>
+</html>

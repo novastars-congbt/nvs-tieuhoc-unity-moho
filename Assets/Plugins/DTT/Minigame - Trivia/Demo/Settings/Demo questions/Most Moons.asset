@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c95a3cb32ddba2f409c5ced84168639f, type: 3}
+  m_Name: Most Moons
+  m_EditorClassIdentifier: 
+  _title: Which planet has the most moons?
+  _matchCorrectAnswers: 0
+  _answers:
+  - id: 0
+  - id: 1
+  - id: 2
+  - id: 3
+  _questionAudio: {fileID: 8300000, guid: 9bb112466c76b0946933e077b1f818e2, type: 3}
+  _useTitle: 0
+  references:
+    version: 1
+    00000000:
+      type: {class: Answer, ns: DTT.Trivia, asm: DTT.Trivia.Runtime}
+      data:
+        _isCorrect: 1
+        _body: Saturn
+    00000001:
+      type: {class: Answer, ns: DTT.Trivia, asm: DTT.Trivia.Runtime}
+      data:
+        _isCorrect: 0
+        _body: Mercury
+    00000002:
+      type: {class: Answer, ns: DTT.Trivia, asm: DTT.Trivia.Runtime}
+      data:
+        _isCorrect: 0
+        _body: Venus
+    00000003:
+      type: {class: Answer, ns: DTT.Trivia, asm: DTT.Trivia.Runtime}
+      data:
+        _isCorrect: 0
+        _body: Earth
