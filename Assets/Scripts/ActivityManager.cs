@@ -1,23 +1,34 @@
 using Assets.Diamondhenge.HengeVideoPlayer;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Playables;
+using UnityEngine.UI;
+using UnityEngine.Video;
 //using VInspector.Libs;
 
 public class ActivityManager : MonoBehaviour
 {
     public PlayableDirector Timeline;
+    public VideoPlayer videoPlayer;
+    [SerializeField]
+    RawImage rawImage;
+    RenderTexture renderTextureInst;
     [SerializeField]
      GameObject[] videoOffline;
     [SerializeField]
      GameObject[] videoOnline;
     GameController gameController;
-
     private void Awake()
     {
         if (gameController == null) gameController = GameController.instance;
+        Debug.LogError("================ " + System.IO.Path.Combine(Application.streamingAssetsPath, gameController.data.typeClasses[gameController.currentClass].name, gameController.data.typeClasses[gameController.currentClass].typeLessons[gameController.currentLesson].name, gameController.data.typeClasses[gameController.currentClass].typeLessons[gameController.currentLesson].typeActives[gameController.currentActivity].name + ".mp4"));
+        videoPlayer.url = System.IO.Path.Combine(Application.streamingAssetsPath, gameController.data.typeClasses[gameController.currentClass].name, gameController.data.typeClasses[gameController.currentClass].typeLessons[gameController.currentLesson].name, gameController.data.typeClasses[gameController.currentClass].typeLessons[gameController.currentLesson].typeActives[gameController.currentActivity].name + ".mp4");
+        videoPlayer.Prepare();
+        videoPlayer.prepareCompleted += PlayVideo;
+        //StartCoroutine(PlayVideo());
         //SetOnlyEvent();
         for (int i = 0; i < videoOffline.Length; i++)
         {
@@ -71,6 +82,27 @@ public class ActivityManager : MonoBehaviour
 
         }
 
+    }
+
+    void PlayVideo(VideoPlayer source) {
+        renderTextureInst = new RenderTexture((int)videoPlayer.width, (int)videoPlayer.height, 32);
+        videoPlayer.targetTexture = renderTextureInst;
+        rawImage.color = Color.white;
+        rawImage.texture = renderTextureInst;
+        videoPlayer.Play();
+    }
+
+    IEnumerator PlayVideo() {
+        yield return null;
+        while(!videoPlayer.isPrepared)
+        {
+            yield return null;
+        }
+        renderTextureInst = new RenderTexture((int)videoPlayer.width, (int)videoPlayer.height, 32);
+        videoPlayer.targetTexture = renderTextureInst;
+        rawImage.color = Color.white;
+        rawImage.texture = renderTextureInst;
+        videoPlayer.Play();
     }
 
     //void SetOnlyEvent()

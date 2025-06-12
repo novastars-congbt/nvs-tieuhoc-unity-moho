@@ -12,6 +12,7 @@ using UnityEngine.InputSystem.Interactions;
 using static UnityEngine.InputSystem.InputAction;
 using System;
 using Assets.Diamondhenge.HengeVideoPlayer;
+using UnityEngine.Video;
 // using CrazyMinnow.SALSA;
 // using VInspector.Libs;
 
@@ -29,6 +30,7 @@ public class GameController : UIProperties
     public int currentActivity;
     public int currentStep;
     public int currentSlide;
+
     [SerializeField]
     float valueZoomDefault;
     float valueZoom = 1f;
@@ -89,6 +91,7 @@ public class GameController : UIProperties
     Action actionBtnOpen;
     Action actionBtnClose;
     public PlayableDirector currentTimeline;
+    public VideoPlayer currentVideoPlayer;
 
     public Data.TypeClass.TypeLesson.TypeActive typeActive;
     ActivityManager _activity;
@@ -191,7 +194,15 @@ public class GameController : UIProperties
         //    BtnBack();
         //    StartCoroutine(DelayKeyDown());
         //}
-        if (currentTimeline != null && !replay) SetSliderAccordingToTime();
+        
+        if (currentTimeline != null && currentVideoPlayer != null) {
+            //Debug.LogErrorFormat("================= {0}, {1}", currentVideoPlayer.time, currentTimeline.time);
+            if (Mathf.Abs((float)currentVideoPlayer.time - (float)currentTimeline.time) > 0.1f) {
+                Debug.LogError("================= set time");
+                currentTimeline.time = currentVideoPlayer.time;
+            }
+        }
+        if (/*currentTimeline != null &&*/ currentVideoPlayer != null && !replay) SetSliderAccordingToTime();
         if (sliderZoom.value > 1 && !IsPointerOverMainCanvas()) {
             if (Input.GetMouseButton(0)) Cursor.SetCursor(textureMouse[1], Vector2.zero, CursorMode.ForceSoftware);
             else Cursor.SetCursor(textureMouse[0], Vector2.zero, CursorMode.ForceSoftware);
@@ -423,11 +434,12 @@ public class GameController : UIProperties
         activity = Resources.Load<ActivityManager>(pathTemp);
         _activity = Instantiate(activity);
         currentTimeline = _activity.Timeline;
+        currentVideoPlayer = _activity.videoPlayer;
+        if (currentVideoPlayer != null) currentVideoPlayer.prepareCompleted += SetTimeVideo;
         content = _activity.transform.FindDeepChild<Transform>("Content");
         Debug.LogError("============ content = " + content);
     }
-
-     public int IndexSecondaryActivity()
+    public int IndexSecondaryActivity()
     {
         for (int i = 0; i < data.typeClasses[currentClass].typeLessons[currentLesson].typeSecondaryActives.Length; i++)
         {
@@ -530,6 +542,7 @@ public class GameController : UIProperties
     }
 
     bool delaySetTimePause = false;
+    bool isSetSliderAccordingToTime = true;
     bool isOpen = false;
     Transform objBtnOpenPanel;
     Transform objBtnClosePanel;
@@ -559,7 +572,12 @@ public class GameController : UIProperties
         if (typeActive.typeSteps[currentStep].typeSlides[currentSlide].musicWeb.urlMusic != null && typeActive.typeSteps[currentStep].typeSlides[currentSlide].musicWeb.urlMusic.Length > 0) musicWebController.SetMusic(typeActive.typeSteps[currentStep].typeSlides[currentSlide].musicWeb.nameMusic, typeActive.typeSteps[currentStep].typeSlides[currentSlide].musicWeb.timeMusic, typeActive.typeSteps[currentStep].typeSlides[currentSlide].musicWeb.urlMusic);
         delaySetTimePause = true;
         SetTimePause();
-        currentTimeline.time = timePause[0];
+        // CancelInvoke("DelaySetTimeVideo");
+        if (currentVideoPlayer.isPrepared) {
+            currentVideoPlayer.time = timePause[0];
+            if (currentTimeline != null) currentTimeline.time = timePause[0];
+        }
+        // else Invoke("DelaySetTimeVideo", 1f);
         //if (typeActive.typeSteps[currentStep].typeSlides[currentSlide].isCartoon)
         //{
         sliderTimeVideo.gameObject.SetActive(true);
@@ -581,6 +599,13 @@ public class GameController : UIProperties
         PlayDotweenBtnForward();
         Invoke("SetOpenClosePanel", 0.1f);
         Invoke("SetOnlyEvent", 0.1f);
+    }
+
+    void SetTimeVideo(VideoPlayer source) {
+        currentVideoPlayer.time = timePause[0];
+        if (currentTimeline != null) currentTimeline.time = timePause[0];
+        currentVideoPlayer.Play();
+        currentTimeline.Play();
     }
 
     public void SetVolumeSound(float volume)
@@ -669,8 +694,10 @@ public class GameController : UIProperties
     bool pauseTimeLine = false;
     public void SetSliderAccordingToTime()
     {
+        //Debug.LogErrorFormat("============= {0}, {1}, {2}, {3}", delayChangeSlider, delaySetTimePause, isTimeAccordingToSlider, currentVideoPlayer.time);
+        if (!isSetSliderAccordingToTime) return;
         if (delaySetTimePause) return;
-        if (sliderTimeVideo.gameObject.activeSelf) sliderTimeVideo.value = (float)currentTimeline.time - timePause[0];
+        if (sliderTimeVideo.gameObject.activeSelf) sliderTimeVideo.value = (float)currentVideoPlayer.time/*currentTimeline.time*/ - timePause[0];
         /*if (currentStep == 0)*/
         //sliderTimeVideo.value = (float)currentTimeline.time;
         //else sliderTimeVideo.value = (float)currentTimeline.time - typeActive.typeSteps[currentStep - 1].time;
@@ -705,7 +732,7 @@ public class GameController : UIProperties
         //{
             //Debug.LogError("=============================== dcmm");
             float time;
-            /*if (currentStep == 0)*/ time = (float)currentTimeline.time;
+            /*if (currentStep == 0)*/ time = (float)currentVideoPlayer.time/*currentTimeline.time*/;
         //else time = (float) currentTimeline.time - typeActive.typeSteps[currentStep - 1].time;
         //if (((i > 0 && i < timePause.Count - 1 && time >= timePause[i] && time - timePause[i] < 0.1f) || (i == timePause.Count - 1 && time >= sliderTimeVideo.maxValue)) && !pause && !pauseTimeLine)
         //{
@@ -740,8 +767,6 @@ public class GameController : UIProperties
         //}
     }
 
-    bool isTimeAccordingToSlider = false;
-
     public void SetTimeAccordingToSlider(/*float value*/)
     {
         Debug.LogError("============== SetTimeAccordingToSlider");
@@ -756,7 +781,8 @@ public class GameController : UIProperties
         //if (time < 0.5f) return;
         //Debug.LogError("==================== vclol luon");
         CancelInvoke("BtnPause");
-        currentTimeline.time = /*value*/ sliderTimeVideo.value + timePause[0];
+        currentVideoPlayer.time = sliderTimeVideo.value + timePause[0];
+        if (currentTimeline != null) currentTimeline.time = sliderTimeVideo.value + timePause[0];
         if (!replay)
         {
             pause = true;
@@ -777,6 +803,21 @@ public class GameController : UIProperties
         //        break;
         //    }
         //}
+    }
+
+    public void IsNotSetSliderAccordingToTime()
+    {
+        isSetSliderAccordingToTime = false;
+    }
+
+    public void IsSetSliderAccordingToTime()
+    {
+        isSetSliderAccordingToTime = true;
+    }
+
+    public void DelayIsSetSliderAccordingToTime() {
+        CancelInvoke("IsSetSliderAccordingToTime");
+        Invoke("IsSetSliderAccordingToTime", 0.3f);
     }
 
     public void SetTimeLineStop()
@@ -848,6 +889,7 @@ public class GameController : UIProperties
 
     public void DropDownActivity()
     {
+        Debug.LogError("drop down");
         if (!tweenDrop)
         {
             listActivity.transform.DOScaleY(1f, 0.25f);
@@ -882,11 +924,16 @@ public class GameController : UIProperties
 
     public void BtnBack()
     {
-        if (!currentTimeline) return;
+        //if (!currentTimeline) return;
+        isSetSliderAccordingToTime = false;
+        CancelInvoke("IsSetSliderAccordingToTime");
+        Invoke("IsSetSliderAccordingToTime", 0.3f);
         if (currentSlide > 0)
         {
             currentSlide--;
-            currentTimeline.time = typeActive.typeSteps[currentStep].typeSlides[currentSlide].time;
+            if (currentTimeline != null) currentTimeline.time = typeActive.typeSteps[currentStep].typeSlides[currentSlide].time;
+            currentVideoPlayer.time = typeActive.typeSteps[currentStep].typeSlides[currentSlide].time;
+            Debug.LogError("================= video.time = " + currentVideoPlayer.time);
             //if (pause)
             //{
             //    replay = false;
@@ -966,11 +1013,15 @@ public class GameController : UIProperties
 
     public void BtnForward()
     {
-        if (!currentTimeline) return;
+        //if (!currentTimeline) return;
+        isSetSliderAccordingToTime = false;
+        CancelInvoke("IsSetSliderAccordingToTime");
+        Invoke("IsSetSliderAccordingToTime", 0.3f);
         if (currentSlide < typeActive.typeSteps[currentStep].typeSlides.Length - 1)
         {
             currentSlide++;
-            currentTimeline.time = typeActive.typeSteps[currentStep].typeSlides[currentSlide].time;
+            if (currentTimeline != null) currentTimeline.time = typeActive.typeSteps[currentStep].typeSlides[currentSlide].time;
+            currentVideoPlayer.time = typeActive.typeSteps[currentStep].typeSlides[currentSlide].time;
             //if (pause)
             //{
             //    replay = false;
@@ -1122,7 +1173,7 @@ public class GameController : UIProperties
 
     public void BtnLock()
     {
-        if (currentTimeline == null) return;
+        //if (currentTimeline == null) return;
         if (!isLock)
         {
             isLock = true;
@@ -1164,14 +1215,16 @@ public class GameController : UIProperties
         if (!pause)
         {
             btnPlayPause.transform.GetComponent<Image>().sprite = sprPlayPause[0];
-            currentTimeline.Pause();
+             if (currentTimeline != null) currentTimeline.Pause();
+            currentVideoPlayer.Pause();
             pause = true;
             //pauseTimeLine = true;
         }
         else
         {
             btnPlayPause.transform.GetComponent<Image>().sprite = sprPlayPause[1];
-            currentTimeline.Resume();
+            if (currentTimeline != null) currentTimeline.Resume();
+            currentVideoPlayer.Play();
             pause = false;
             //StartCoroutine(DelayPauseTimeLine());
         }
@@ -1180,7 +1233,11 @@ public class GameController : UIProperties
         {
             replay = false;
             PlayDotweenBtnForward();
-            currentTimeline.time = timePause[0];
+            if (currentTimeline != null) currentTimeline.time = timePause[0];
+            currentVideoPlayer.time = timePause[0];
+            isSetSliderAccordingToTime = false;
+            CancelInvoke("IsSetSliderAccordingToTime");
+            Invoke("IsSetSliderAccordingToTime", 0.3f);
         }
 
     }
