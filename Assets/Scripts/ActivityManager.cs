@@ -85,6 +85,7 @@ public class ActivityManager : MonoBehaviour
     }
 
     void PlayVideo(VideoPlayer source) {
+        Debug.LogError("=============== PlayVideo");
         renderTextureInst = new RenderTexture((int)videoPlayer.width, (int)videoPlayer.height, 32);
         videoPlayer.targetTexture = renderTextureInst;
         rawImage.color = Color.white;

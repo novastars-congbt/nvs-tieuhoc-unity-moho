@@ -198,7 +198,7 @@ public class GameController : UIProperties
         if (currentTimeline != null && currentVideoPlayer != null) {
             //Debug.LogErrorFormat("================= {0}, {1}", currentVideoPlayer.time, currentTimeline.time);
             if (Mathf.Abs((float)currentVideoPlayer.time - (float)currentTimeline.time) > 0.1f) {
-                Debug.LogError("================= set time");
+                //Debug.LogError("================= set time");
                 currentTimeline.time = currentVideoPlayer.time;
             }
         }
@@ -433,7 +433,7 @@ public class GameController : UIProperties
         Debug.LogError("================= " + pathTemp);
         activity = Resources.Load<ActivityManager>(pathTemp);
         _activity = Instantiate(activity);
-        currentTimeline = _activity.Timeline;
+        if (_activity.Timeline != null && _activity.Timeline.playableAsset != null) currentTimeline = _activity.Timeline;
         currentVideoPlayer = _activity.videoPlayer;
         if (currentVideoPlayer != null) currentVideoPlayer.prepareCompleted += SetTimeVideo;
         content = _activity.transform.FindDeepChild<Transform>("Content");
@@ -602,10 +602,13 @@ public class GameController : UIProperties
     }
 
     void SetTimeVideo(VideoPlayer source) {
+        Debug.LogError("=============== SetTimeVideo");
         currentVideoPlayer.time = timePause[0];
-        if (currentTimeline != null) currentTimeline.time = timePause[0];
-        currentVideoPlayer.Play();
-        currentTimeline.Play();
+        if (currentTimeline != null) {
+            currentTimeline.time = timePause[0];
+            currentTimeline.Play();
+        } 
+        //currentVideoPlayer.Play();
     }
 
     public void SetVolumeSound(float volume)
@@ -692,9 +695,15 @@ public class GameController : UIProperties
     }
 
     bool pauseTimeLine = false;
+    float timeDelayShowTimeVideo;
     public void SetSliderAccordingToTime()
     {
         //Debug.LogErrorFormat("============= {0}, {1}, {2}, {3}", delayChangeSlider, delaySetTimePause, isTimeAccordingToSlider, currentVideoPlayer.time);
+        timeDelayShowTimeVideo += Time.deltaTime;
+        if (timeDelayShowTimeVideo >= 0.5f) {
+            Debug.LogError("============== timevideo = " + currentVideoPlayer.time);
+            timeDelayShowTimeVideo = 0;
+        }
         if (!isSetSliderAccordingToTime) return;
         if (delaySetTimePause) return;
         if (sliderTimeVideo.gameObject.activeSelf) sliderTimeVideo.value = (float)currentVideoPlayer.time/*currentTimeline.time*/ - timePause[0];
@@ -769,7 +778,7 @@ public class GameController : UIProperties
 
     public void SetTimeAccordingToSlider(/*float value*/)
     {
-        Debug.LogError("============== SetTimeAccordingToSlider");
+        //Debug.LogError("============== SetTimeAccordingToSlider");
         if (delaySetTimePause) return;
         if (!sliderTimeVideo.gameObject.activeSelf) return;
         if (sliderTimeVideo.value >= sliderTimeVideo.maxValue) sliderTimeVideo.value = sliderTimeVideo.maxValue;
@@ -780,15 +789,16 @@ public class GameController : UIProperties
         //else time = Mathf.Abs(value + typeActive.typeSteps[currentStep - 1].time - (float)currentTimeline.time);
         //if (time < 0.5f) return;
         //Debug.LogError("==================== vclol luon");
-        CancelInvoke("BtnPause");
+        CancelInvoke("Pause");
+        Debug.LogErrorFormat("============== valueSlider = {0}, timePause[0] = {1}", sliderTimeVideo.value, timePause[0]);
         currentVideoPlayer.time = sliderTimeVideo.value + timePause[0];
         if (currentTimeline != null) currentTimeline.time = sliderTimeVideo.value + timePause[0];
         if (!replay)
         {
             pause = true;
             //replay = false;
-            BtnPause();
-            Invoke("BtnPause", 0.01f);
+            Pause();
+            Invoke("Pause", 0.5f);
         }
         PlayDotweenBtnForward();
         
@@ -817,7 +827,7 @@ public class GameController : UIProperties
 
     public void DelayIsSetSliderAccordingToTime() {
         CancelInvoke("IsSetSliderAccordingToTime");
-        Invoke("IsSetSliderAccordingToTime", 0.3f);
+        Invoke("IsSetSliderAccordingToTime", 0.5f);
     }
 
     public void SetTimeLineStop()
@@ -927,7 +937,7 @@ public class GameController : UIProperties
         //if (!currentTimeline) return;
         isSetSliderAccordingToTime = false;
         CancelInvoke("IsSetSliderAccordingToTime");
-        Invoke("IsSetSliderAccordingToTime", 0.3f);
+        Invoke("IsSetSliderAccordingToTime", 0.5f);
         if (currentSlide > 0)
         {
             currentSlide--;
@@ -1016,12 +1026,13 @@ public class GameController : UIProperties
         //if (!currentTimeline) return;
         isSetSliderAccordingToTime = false;
         CancelInvoke("IsSetSliderAccordingToTime");
-        Invoke("IsSetSliderAccordingToTime", 0.3f);
+        Invoke("IsSetSliderAccordingToTime", 0.5f);
         if (currentSlide < typeActive.typeSteps[currentStep].typeSlides.Length - 1)
         {
             currentSlide++;
             if (currentTimeline != null) currentTimeline.time = typeActive.typeSteps[currentStep].typeSlides[currentSlide].time;
             currentVideoPlayer.time = typeActive.typeSteps[currentStep].typeSlides[currentSlide].time;
+
             //if (pause)
             //{
             //    replay = false;
@@ -1211,9 +1222,10 @@ public class GameController : UIProperties
     bool replay = false;
     public void BtnPause()
     {
-        Debug.Log("=================== pause");
+        //Debug.Log("=================== pause");
         if (!pause)
         {
+            isSetSliderAccordingToTime = false;
             btnPlayPause.transform.GetComponent<Image>().sprite = sprPlayPause[0];
              if (currentTimeline != null) currentTimeline.Pause();
             currentVideoPlayer.Pause();
@@ -1222,6 +1234,7 @@ public class GameController : UIProperties
         }
         else
         {
+            isSetSliderAccordingToTime = true;
             btnPlayPause.transform.GetComponent<Image>().sprite = sprPlayPause[1];
             if (currentTimeline != null) currentTimeline.Resume();
             currentVideoPlayer.Play();
@@ -1237,9 +1250,37 @@ public class GameController : UIProperties
             currentVideoPlayer.time = timePause[0];
             isSetSliderAccordingToTime = false;
             CancelInvoke("IsSetSliderAccordingToTime");
-            Invoke("IsSetSliderAccordingToTime", 0.3f);
+            Invoke("IsSetSliderAccordingToTime", 0.5f);
         }
 
+    }
+
+    public void Pause() {
+        if (!pause)
+        {
+            if (currentTimeline != null) currentTimeline.Pause();
+            currentVideoPlayer.Pause();
+            pause = true;
+            //pauseTimeLine = true;
+        }
+        else
+        {
+            if (currentTimeline != null) currentTimeline.Resume();
+            currentVideoPlayer.Play();
+            pause = false;
+            //StartCoroutine(DelayPauseTimeLine());
+        }
+
+        if (replay)
+        {
+            replay = false;
+            PlayDotweenBtnForward();
+            if (currentTimeline != null) currentTimeline.time = timePause[0];
+            currentVideoPlayer.time = timePause[0];
+            isSetSliderAccordingToTime = false;
+            CancelInvoke("IsSetSliderAccordingToTime");
+            Invoke("IsSetSliderAccordingToTime", 0.5f);
+        }
     }
 
     public void ActionPause()
