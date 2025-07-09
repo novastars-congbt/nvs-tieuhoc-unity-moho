@@ -25,9 +25,9 @@ public class ActivityManager : MonoBehaviour
     {
         if (gameController == null) gameController = GameController.instance;
         Debug.LogError("================ " + System.IO.Path.Combine(Application.streamingAssetsPath, gameController.data.typeClasses[gameController.currentClass].name, gameController.data.typeClasses[gameController.currentClass].typeLessons[gameController.currentLesson].name, gameController.data.typeClasses[gameController.currentClass].typeLessons[gameController.currentLesson].typeActives[gameController.currentActivity].name + ".mp4"));
-        videoPlayer.url = System.IO.Path.Combine(Application.streamingAssetsPath, gameController.data.typeClasses[gameController.currentClass].name, gameController.data.typeClasses[gameController.currentClass].typeLessons[gameController.currentLesson].name, gameController.data.typeClasses[gameController.currentClass].typeLessons[gameController.currentLesson].typeActives[gameController.currentActivity].name + ".mp4");
-        videoPlayer.Prepare();
-        videoPlayer.prepareCompleted += PlayVideo;
+        // videoPlayer.url = System.IO.Path.Combine(Application.streamingAssetsPath, gameController.data.typeClasses[gameController.currentClass].name, gameController.data.typeClasses[gameController.currentClass].typeLessons[gameController.currentLesson].name, gameController.data.typeClasses[gameController.currentClass].typeLessons[gameController.currentLesson].typeActives[gameController.currentActivity].name + ".mp4");
+        // videoPlayer.Prepare();
+        // videoPlayer.prepareCompleted += PlayVideo;
         //StartCoroutine(PlayVideo());
         //SetOnlyEvent();
         for (int i = 0; i < videoOffline.Length; i++)
@@ -82,6 +82,12 @@ public class ActivityManager : MonoBehaviour
 
         }
 
+    }
+
+    public void SetVideo(string url) {
+        videoPlayer.url = url;
+        videoPlayer.Prepare();
+        videoPlayer.prepareCompleted += PlayVideo;
     }
 
     void PlayVideo(VideoPlayer source) {

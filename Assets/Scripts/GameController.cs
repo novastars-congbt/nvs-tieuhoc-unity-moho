@@ -13,11 +13,15 @@ using static UnityEngine.InputSystem.InputAction;
 using System;
 using Assets.Diamondhenge.HengeVideoPlayer;
 using UnityEngine.Video;
+using System.Runtime.InteropServices;
+using UnityEngine.Networking;
 // using CrazyMinnow.SALSA;
 // using VInspector.Libs;
 
 public class GameController : UIProperties
 {
+    [DllImport("__Internal")]
+    private static extern void CreateBlobURLFromBase64(string base64, string url);
     public static GameController instance;
     public Data data;
     public MusicController musicController;
@@ -209,6 +213,32 @@ public class GameController : UIProperties
         }
         else Cursor.SetCursor(null, Vector2.zero, CursorMode.ForceSoftware);
     }
+
+    #if UNITY_WEBGL && !UNITY_EDITOR
+    IEnumerator LoadVideoWebGL()
+    {
+        string url = System.IO.Path.Combine(Application.streamingAssetsPath, data.typeClasses[currentClass].name, data.typeClasses[currentClass].typeLessons[currentLesson].name, data.typeClasses[currentClass].typeLessons[currentLesson].typeActives[currentActivity].name + ".mp4");
+        UnityWebRequest request = UnityWebRequest.Get(url);
+        yield return request.SendWebRequest();
+
+        if (request.result == UnityWebRequest.Result.Success)
+        {
+            byte[] videoData = request.downloadHandler.data;
+            string base64 = System.Convert.ToBase64String(videoData);
+            CreateBlobURLFromBase64(base64, url);
+        }
+        else
+        {
+            Debug.LogError("Không tải được video: " + request.error);
+        }
+    }
+
+    // Hàm này sẽ được gọi từ JavaScript
+    public void SetVideoURL(string url)
+    {
+        _activity.SetVideo(url);
+    }
+#endif
 
     InputActionMap Teacher;
     InputAction PlayPause;
@@ -433,6 +463,12 @@ public class GameController : UIProperties
         Debug.LogError("================= " + pathTemp);
         activity = Resources.Load<ActivityManager>(pathTemp);
         _activity = Instantiate(activity);
+#if UNITY_WEBGL && !UNITY_EDITOR
+        StartCoroutine(LoadVideoWebGL());
+#else
+        string url = System.IO.Path.Combine(Application.streamingAssetsPath, data.typeClasses[currentClass].name, data.typeClasses[currentClass].typeLessons[currentLesson].name, data.typeClasses[currentClass].typeLessons[currentLesson].typeActives[currentActivity].name + ".mp4");
+        _activity.SetVideo(url);
+#endif
         if (_activity.Timeline != null && _activity.Timeline.playableAsset != null) currentTimeline = _activity.Timeline;
         currentVideoPlayer = _activity.videoPlayer;
         if (currentVideoPlayer != null) currentVideoPlayer.prepareCompleted += SetTimeVideo;
@@ -699,11 +735,11 @@ public class GameController : UIProperties
     public void SetSliderAccordingToTime()
     {
         //Debug.LogErrorFormat("============= {0}, {1}, {2}, {3}", delayChangeSlider, delaySetTimePause, isTimeAccordingToSlider, currentVideoPlayer.time);
-        timeDelayShowTimeVideo += Time.deltaTime;
-        if (timeDelayShowTimeVideo >= 0.5f) {
-            Debug.LogError("============== timevideo = " + currentVideoPlayer.time);
-            timeDelayShowTimeVideo = 0;
-        }
+        // timeDelayShowTimeVideo += Time.deltaTime;
+        // if (timeDelayShowTimeVideo >= 0.5f) {
+        //     Debug.LogError("============== timevideo = " + currentVideoPlayer.time);
+        //     timeDelayShowTimeVideo = 0;
+        // }
         if (!isSetSliderAccordingToTime) return;
         if (delaySetTimePause) return;
         if (sliderTimeVideo.gameObject.activeSelf) sliderTimeVideo.value = (float)currentVideoPlayer.time/*currentTimeline.time*/ - timePause[0];
@@ -798,7 +834,7 @@ public class GameController : UIProperties
             pause = true;
             //replay = false;
             Pause();
-            Invoke("Pause", 0.5f);
+            Invoke("Pause", 0.01f);
         }
         PlayDotweenBtnForward();
         
